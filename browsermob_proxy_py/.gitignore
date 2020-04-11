@@ -1,0 +1,9 @@
+*.swp
+*.swo
+*.pyc
+dist/
+build/
+*.egg-info/
+.cache/
+bmp.log
+.idea/

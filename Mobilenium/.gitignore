@@ -1,0 +1,10 @@
+.pytest_cache/
+__pycache__/
+.eggs/
+build/
+dist/
+mobilenium.egg-info/
+.cache
+*.pyc
+*.log
+.coverage
