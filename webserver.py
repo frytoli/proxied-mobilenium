@@ -36,7 +36,7 @@ def get_site(site):
     profile.update_preferences()
 
     # Intialize driver
-    mob = mobidriver.Firefox(browsermob_binary='/home/user/browsermob-proxy-SNAPSHOT/binv/browsermob-proxy', firefox_profile=profile, headless=True, upstream_proxy={'socks5Proxy':'127.0.0.1:9050'})
+    mob = mobidriver.Firefox(browsermob_binary='/home/user/browsermob-proxy-SNAPSHOT/bin/browsermob-proxy', firefox_profile=profile, headless=True, upstream_proxy={'socks5Proxy':'127.0.0.1:9050'})
 
     # Navigate to page
     mob.get(site)
