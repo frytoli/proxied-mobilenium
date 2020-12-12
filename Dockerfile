@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM python:3.9-slim
 
 # Set bash to default shell for building vessel
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
@@ -7,52 +7,45 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
+RUN mkdir -p /usr/share/man/man1/
 RUN apt update && \
-		apt install -y software-properties-common && \
+		apt install -y \
+				software-properties-common \
+		 		build-essential	\
+				sudo \
+				net-tools \
+				tor \
+				unzip \
+				wget \
+				xvfb \
+				unzip \
+				default-jdk
+RUN apt update && \
 		apt dist-upgrade -y
 
-RUN apt install -y \
-		vim \
-		strace \
-		python3 \
-		python3-pip \
-		python3-setuptools \
-		supervisor \
-		sudo \
-		net-tools \
-		build-essential \
-		curl \
-		wget \
-		xvfb \
-		git \
-		tor \
-		unzip \
-		default-jdk
+ENV VIRTUAL_ENV=/venv
+RUN python3.9 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN	pip3 install virtualenv
+# Upgrade pip
+RUN python -m pip install --upgrade pip
+
+RUN pip3 install \
+		selenium \
+		psutil
 
 # Add system user
 RUN useradd -m -s /bin/bash user && \
-		su user -c 'virtualenv -p python3 /home/user/venv' && \
 		chmod 0640 /etc/sudoers && \
 		echo 'user ALL=(ALL) NOPASSWD: /bin/kill' >> /etc/sudoers
 
-# Add supervisord app config file
-ADD supervise-app.conf /etc/supervisor/conf.d/
-ADD supervise-tor.conf /etc/supervisor/conf.d/
-
-# Add app code and install app dependencies
-ADD webserver.py /home/user/webserver.py
-ADD requirements.txt /home/user/requirements.txt
-RUN su user -c 'source /home/user/venv/bin/activate && pip3 install -r /home/user/requirements.txt'
-
 # Add Mobilenium code and install dependencies
 ADD ./Mobilenium /home/user/Mobilenium
-RUN su user -c 'source /home/user/venv/bin/activate && pip3 install -r /home/user/Mobilenium/requirements.txt'
+RUN pip3 install -r /home/user/Mobilenium/requirements.txt
 
 # Add browsermob proxy python wrapper code and install dependencies
 ADD ./browsermob_proxy_py /home/user/browsermob_proxy_py
-RUN su user -c 'source /home/user/venv/bin/activate && pip3 install -r /home/user/browsermob_proxy_py/requirements.txt'
+RUN pip3 install -r /home/user/browsermob_proxy_py/requirements.txt
 
 # Add browsermob proxy and change mode of executable
 ADD ./browsermob-proxy-SNAPSHOT /home/user/browsermob-proxy-SNAPSHOT
@@ -67,8 +60,12 @@ RUN sudo wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/g
 		sudo chmod +x /usr/bin/geckodriver && \
 		sudo rm geckodriver-v0.24.0-linux64.tar.gz
 
+# Add entrypoint script
+ADD entrypoint.sh /home/user/entrypoint.sh
+RUN sudo chmod +x /home/user/entrypoint.sh
+
 # Ensure ownership
 RUN chown -Rv user /home/user
 RUN chmod -R 744 /home/user
 
-CMD /usr/bin/supervisord -n
+ENTRYPOINT ["bash", "/home/user/entrypoint.sh"]
